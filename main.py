@@ -71,8 +71,7 @@ class AccountResequencer:
         container.pack(fill="both", expand=True)
 
         canvas = tk.Canvas(container, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview
-        )
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
 
         canvas.configure(yscrollcommand=scrollbar.set)
 
@@ -99,14 +98,8 @@ class AccountResequencer:
         canvas.bind_all("<MouseWheel>", on_mousewheel)
 
         # Linux mouse wheel support
-        canvas.bind_all(
-            "<Button-4>",
-            lambda event: canvas.yview_scroll(-1, "units")
-        )
-        canvas.bind_all(
-            "<Button-5>",
-            lambda event: canvas.yview_scroll(1, "units")
-        )
+        canvas.bind_all("<Button-4>", lambda event: canvas.yview_scroll(-1, "units"))
+        canvas.bind_all("<Button-5>", lambda event: canvas.yview_scroll(1, "units"))
 
         # SQL Server connection
         connection_frame = ttk.LabelFrame(
@@ -198,9 +191,7 @@ class AccountResequencer:
 
         # Stored Procedure Button
         ttk.Button(
-            outer,
-            text="OPEN RE-SEQUNCING ROUTE",
-            command=self.open_procedure_window
+            outer, text="OPEN RE-SEQUNCING ROUTE", command=self.open_procedure_window
         ).pack(anchor="w", pady=(10, 0))
         # End of Stored Procedure Button
 
@@ -216,40 +207,21 @@ class AccountResequencer:
         prefix_frame.pack(side="top", fill="x", pady=(0, 8))
 
         ttk.Label(prefix_frame, text="Account Prefix:").pack(side="left", padx=(0, 8))
-        ttk.Entry(prefix_frame, textvariable=self.prefix_var, width=15).pack(side="left")
+        ttk.Entry(prefix_frame, textvariable=self.prefix_var, width=15).pack(
+            side="left"
+        )
         ttk.Label(
             prefix_frame,
-            text=" (If set, this will be prepended to all account numbers below)"
+            text=" (If set, this will be prepended to all account numbers below)",
         ).pack(side="left", padx=8)
 
         ttk.Label(
             input_frame,
-            text="Enter AccountNumber values (one account per line):",
+            text="Enter 4-Digit values (one account per line):",
         ).pack(anchor="w")
 
         self.accounts_text = tk.Text(input_frame, height=10, wrap="none", undo=True)
         self.accounts_text.pack(fill="both", expand=True, pady=(5, 8))
-
-        def apply_prefix():
-            prefix = self.prefix_var.get().strip()
-            if not prefix:
-                return
-
-            raw_content = self.accounts_text.get("1.0", "end-1c")
-            if not raw_content.strip():
-                return
-
-            lines = raw_content.splitlines()
-            prefixed_lines = [f"{prefix}{line.strip()}" for line in lines if line.strip()]
-
-            self.accounts_text.delete("1.0", "end")
-            self.accounts_text.insert("1.0", "\n".join(prefixed_lines))
-
-        ttk.Button(
-            prefix_frame,
-            text="Apply Prefix to List",
-            command=apply_prefix
-        ).pack(side="left", padx=8)
 
         sequence_row = ttk.Frame(input_frame)
         sequence_row.pack(fill="x")
@@ -321,16 +293,34 @@ class AccountResequencer:
         frame = ttk.LabelFrame(window, text="Procedure Parameters", padding=15)
         frame.pack(fill="both", expand=True, padx=15, pady=15)
 
-        ttk.Label(frame, text="Route:").grid(row=0, column=0, sticky="w", padx=5, pady=8)
-        ttk.Entry(frame, textvariable=route_var, width=25).grid(row=0, column=1, sticky="w", padx=5, pady=8)
+        ttk.Label(frame, text="Route:").grid(
+            row=0, column=0, sticky="w", padx=5, pady=8
+        )
+        ttk.Entry(frame, textvariable=route_var, width=25).grid(
+            row=0, column=1, sticky="w", padx=5, pady=8
+        )
 
-        ttk.Label(frame, text="Start Value:").grid(row=1, column=0, sticky="w", padx=5, pady=8)
-        ttk.Entry(frame, textvariable=start_value_var, width=25).grid(row=1, column=1, sticky="w", padx=5, pady=8)
+        ttk.Label(frame, text="Start Value:").grid(
+            row=1, column=0, sticky="w", padx=5, pady=8
+        )
+        ttk.Entry(frame, textvariable=start_value_var, width=25).grid(
+            row=1, column=1, sticky="w", padx=5, pady=8
+        )
 
-        ttk.Label(frame, text="Interval:").grid(row=2, column=0, sticky="w", padx=5, pady=8)
-        ttk.Entry(frame, textvariable=interval_var, width=25).grid(row=2, column=1, sticky="w", padx=5, pady=8)
+        ttk.Label(frame, text="Interval:").grid(
+            row=2, column=0, sticky="w", padx=5, pady=8
+        )
+        ttk.Entry(frame, textvariable=interval_var, width=25).grid(
+            row=2, column=1, sticky="w", padx=5, pady=8
+        )
 
-        ttk.Button(frame, text="Execute Procedure", command=lambda: self.execute_procedure(route_var.get(), start_value_var.get(), interval_var.get())).grid(row=3, column=0, columnspan=2, pady=15)
+        ttk.Button(
+            frame,
+            text="Execute Procedure",
+            command=lambda: self.execute_procedure(
+                route_var.get(), start_value_var.get(), interval_var.get()
+            ),
+        ).grid(row=3, column=0, columnspan=2, pady=15)
 
     def _toggle_auth_fields(self, _event=None):
         is_sql = self.auth_var.get() == "SQL Server"
@@ -461,8 +451,21 @@ class AccountResequencer:
 
     def get_accounts(self):
         raw_text = self.accounts_text.get("1.0", "end").strip()
+        lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+
+        if len(lines) > 19:
+            messagebox.showerror("Input Error", "A maximum of 19 accounts is allowed.")
+            return []
+
+        for line in lines:
+            if len(line) != 4:
+                messagebox.showerror(
+                    "Input Error",
+                    f"Account '{line}' must be exactly 4 characters long.",
+                )
+                return []
         if not raw_text:
-            raise ValueError("Enter at least one account number.")
+            messagebox.showerror("Input Error", "Enter at least one account number.")
 
         accounts = []
         for line_number, line in enumerate(raw_text.splitlines(), start=1):
@@ -472,7 +475,9 @@ class AccountResequencer:
             accounts.append(account)
 
         if not accounts:
-            raise ValueError("No valid account numbers were entered.")
+            messagebox.showerror(
+                "Input Error", "No valid account numbers were entered."
+            )
 
         # Prevent accidental duplicate updates in the same run.
         seen = set()
@@ -506,14 +511,30 @@ class AccountResequencer:
         try:
             accounts, start = self._get_start_and_accounts()
 
+            if not accounts:
+                return
+
+            # Get prefix
+            prefix = self.prefix_var.get().strip()
+            if len(prefix) != 6:
+                messagebox.showerror("Input Error", "Prefix must be exactly 6 characters.")
+                return
+            if not prefix:
+                messagebox.showerror("Input Error", "A prefix is required.")
+                return
+
+            # Clear previous preview
             for item in self.preview.get_children():
                 self.preview.delete(item)
 
+            # Apply prefix during preview
             for index, account in enumerate(accounts):
+                prefixed_account = f"{prefix}{account}"
+
                 self.preview.insert(
                     "",
                     "end",
-                    values=(account, start + index),
+                    values=(prefixed_account, start + index),
                 )
 
             self.status_var.set(
@@ -645,11 +666,13 @@ class AccountResequencer:
 
             conn.commit()
 
-            self.status_var.set(f"Stored procedure executed successfully for route '{route}'.")
+            self.status_var.set(
+                f"Stored procedure executed successfully for route '{route}'."
+            )
 
             messagebox.showinfo(
                 "Procedure Executed",
-                f"Stored procedure executed successfully for route '{route}'."
+                f"Stored procedure executed successfully for route '{route}'.",
             )
 
         except pyodbc.Error as exc:
@@ -660,9 +683,12 @@ class AccountResequencer:
                     messagebox.showerror(
                         "Rollback Failed",
                         "An error occurred while rolling back the transaction. "
-                        "Please check the database state manually.")
+                        "Please check the database state manually.",
+                    )
 
-            self.status_var.set("Procedure execution failed. Database changes rolled back.")
+            self.status_var.set(
+                "Procedure execution failed. Database changes rolled back."
+            )
             messagebox.showerror(
                 "Execution Failed",
                 f"Transaction rolled back.\n\n{exc}",
